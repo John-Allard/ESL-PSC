@@ -205,6 +205,9 @@ class SiteViewer(QWidget):
         self.top_splitter = QSplitter(Qt.Orientation.Horizontal)
         self.top_splitter.addWidget(self.top_left_table)
         self.top_splitter.addWidget(self.top_right_table)
+        # Keep the left names pane width constant on window resize
+        self.top_splitter.setStretchFactor(0, 0)
+        self.top_splitter.setStretchFactor(1, 1)
 
         # --- TABLES (BOTTOM SPLITTER) ---
         self.bottom_left_table = QTableWidget()
@@ -244,6 +247,9 @@ class SiteViewer(QWidget):
         self.bottom_splitter = QSplitter(Qt.Orientation.Horizontal)
         self.bottom_splitter.addWidget(self.bottom_left_table)
         self.bottom_splitter.addWidget(self.bottom_right_table)
+        # Mirror stretch factors for bottom pane
+        self.bottom_splitter.setStretchFactor(0, 0)
+        self.bottom_splitter.setStretchFactor(1, 1)
 
         self.vertical_splitter = QSplitter(Qt.Orientation.Vertical)
         # Let the bottom pane take extra vertical space on resize
