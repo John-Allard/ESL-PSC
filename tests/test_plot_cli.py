@@ -36,6 +36,39 @@ def test_plot_cli_binary_forwards_custom_phenotype_names(tmp_path, monkeypatch):
     assert seen["plot_type"] == "violin"
 
 
+def test_plot_cli_writes_diagnostic_traceback_on_plot_error(tmp_path, monkeypatch, capsys):
+    from esl_psc_cli import plot_cli
+
+    pred_csv = tmp_path / "preds.csv"
+    pred_csv.write_text(
+        "species,SPS,num_genes,input_RMSE,true_phenotype\n"
+        "A,0.5,10,0.1,1\n"
+        "B,-0.5,10,0.2,-1\n",
+        encoding="utf-8",
+    )
+    diagnostic_file = tmp_path / "demo_violin_plot_error.txt"
+
+    def fake_rmse_range_pred_plots(*_args, **_kwargs):
+        raise RuntimeError("synthetic plot backend failure")
+
+    monkeypatch.setattr(plot_cli.ecf, "rmse_range_pred_plots", fake_rmse_range_pred_plots)
+
+    rc = plot_cli.main([
+        "--mode", "violin",
+        "--pred_csv", str(pred_csv),
+        "--title", "demo_plot",
+        "--diagnostic_file", str(diagnostic_file),
+    ])
+
+    captured = capsys.readouterr()
+    assert rc == 1
+    assert "Diagnostic written to" in captured.err
+    text = diagnostic_file.read_text(encoding="utf-8")
+    assert "ESL-PSC plot generation diagnostic" in text
+    assert "Traceback:" in text
+    assert "RuntimeError: synthetic plot backend failure" in text
+
+
 def test_plot_cli_missing_input_returns_2(tmp_path):
     missing_csv = tmp_path / "missing.csv"
     cmd = [

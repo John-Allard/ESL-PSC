@@ -9,6 +9,7 @@ import threading
 import subprocess
 import shutil
 import sys
+import traceback
 from pathlib import Path
 from PySide6.QtCore import QObject, Signal, QRunnable, Slot
 from contextlib import redirect_stdout, redirect_stderr # noqa: F401
@@ -180,6 +181,41 @@ class ESLWorker(QRunnable):
 
         return kwargs
 
+    @staticmethod
+    def _plot_diagnostic_path(output_dir: str, output_base: str, mode: str) -> Path:
+        safe_mode = re.sub(r"[^A-Za-z0-9_.-]+", "_", mode).strip("_") or "plot"
+        return Path(output_dir) / f"{output_base}_{safe_mode}_plot_error.txt"
+
+    @staticmethod
+    def _append_plot_diagnostic(
+        path: Path,
+        *,
+        message: str,
+        plot_args: list[str] | None = None,
+        stdout_text: str = "",
+        stderr_text: str = "",
+        exc: BaseException | None = None,
+    ) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write("\nGUI worker diagnostic\n")
+            handle.write(f"Message: {message}\n")
+            if plot_args:
+                handle.write(f"Plot arguments: {' '.join(plot_args)}\n")
+            if stdout_text:
+                handle.write("\nCaptured stdout:\n")
+                handle.write(stdout_text)
+                if not stdout_text.endswith("\n"):
+                    handle.write("\n")
+            if stderr_text:
+                handle.write("\nCaptured stderr:\n")
+                handle.write(stderr_text)
+                if not stderr_text.endswith("\n"):
+                    handle.write("\n")
+            if exc is not None:
+                handle.write("\nWorker traceback:\n")
+                handle.write("".join(traceback.format_exception(type(exc), exc, exc.__traceback__)))
+
     def _run_inprocess_plot(self, mode: str, command_args: list[str]) -> bool:
         """Generate plots using the GUI's Python runtime (no extra bundled runtime)."""
         if "--no_pred_output" in command_args or "--no-pred-output" in command_args:
@@ -193,10 +229,13 @@ class ESLWorker(QRunnable):
             "--output-file-base-name",
         )
         if not output_dir or not output_base:
-            self.signals.error.emit(
-                "Unable to generate plots: missing --output_dir or --output_file_base_name."
+            self.signals.output.emit(
+                "[WARN] Analysis completed, but plot generation was skipped because --output_dir or "
+                "--output_file_base_name was missing."
             )
             return False
+
+        diagnostic_path = self._plot_diagnostic_path(output_dir, output_base, mode)
 
         min_genes_raw = self._arg_value(command_args, "--min_genes", "--min-genes", default="0")
         try:
@@ -206,8 +245,10 @@ class ESLWorker(QRunnable):
 
         pred_csv = Path(output_dir) / f"{output_base}_species_predictions.csv"
         if not pred_csv.is_file():
-            self.signals.error.emit(
-                f"Unable to generate plots: predictions CSV not found: {pred_csv}"
+            message = f"Unable to generate plots: predictions CSV not found: {pred_csv}"
+            self._append_plot_diagnostic(diagnostic_path, message=message)
+            self.signals.output.emit(
+                f"[WARN] Analysis completed, but plot generation failed. Diagnostic details were written to: {diagnostic_path}"
             )
             return False
 
@@ -216,6 +257,7 @@ class ESLWorker(QRunnable):
             "--pred_csv", str(pred_csv),
             "--title", output_base,
             "--min_genes", str(min_genes),
+            "--diagnostic_file", str(diagnostic_path),
         ]
         if mode != "continuous":
             pheno_names = self._arg_pair(command_args, "--pheno_names", "--pheno-names")
@@ -231,16 +273,41 @@ class ESLWorker(QRunnable):
             self.signals.output.emit(
                 f"[INFO] Generating {mode} prediction plot with bundled Python runtime..."
             )
-            rc = int(plot_cli_main(plot_args))
+            stdout_capture = io.StringIO()
+            stderr_capture = io.StringIO()
+            with redirect_stdout(stdout_capture), redirect_stderr(stderr_capture):
+                rc = int(plot_cli_main(plot_args))
+            captured_stdout = stdout_capture.getvalue()
+            captured_stderr = stderr_capture.getvalue()
             if rc != 0:
-                self.signals.error.emit(
-                    f"Plot generation failed with exit code {rc}."
+                self._append_plot_diagnostic(
+                    diagnostic_path,
+                    message=f"plot_cli returned exit code {rc}",
+                    plot_args=plot_args,
+                    stdout_text=captured_stdout,
+                    stderr_text=captured_stderr,
+                )
+                self.signals.output.emit(
+                    f"[WARN] Analysis completed, but plot generation failed with exit code {rc}. "
+                    f"Diagnostic details were written to: {diagnostic_path}"
                 )
                 return False
+            for line in captured_stdout.splitlines():
+                self.signals.output.emit(line)
+            for line in captured_stderr.splitlines():
+                self.signals.output.emit(line)
             self.signals.output.emit("[INFO] Plot generation completed.")
             return True
         except Exception as exc:
-            self.signals.error.emit(f"Plot generation failed: {exc}")
+            self._append_plot_diagnostic(
+                diagnostic_path,
+                message=f"GUI worker plot generation exception: {exc}",
+                plot_args=plot_args,
+                exc=exc,
+            )
+            self.signals.output.emit(
+                f"[WARN] Analysis completed, but plot generation failed. Diagnostic details were written to: {diagnostic_path}"
+            )
             return False
     
     @Slot()
@@ -590,7 +657,9 @@ class ESLWorker(QRunnable):
                 exit_code = _run_subprocess(command)
                 if exit_code == 0 and plot_mode is not None:
                     if not self._run_inprocess_plot(plot_mode, rust_args):
-                        exit_code = 1
+                        self.signals.output.emit(
+                            "[WARN] Plot generation failure did not mark the completed analysis as failed."
+                        )
             except Exception as e:
                 import traceback
                 if not self.was_stopped:
