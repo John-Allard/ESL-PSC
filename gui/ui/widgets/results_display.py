@@ -3,6 +3,7 @@ Dialogs for displaying ESL-PSC analysis results.
 """
 from __future__ import annotations
 import os
+from pathlib import Path
 
 import math
 import numpy as np
@@ -25,6 +26,42 @@ from gui.ui.widgets.dialogs import PhenoThresholdDialog
 
 # Keep references to open dialogs to prevent garbage collection
 _open_dialogs = []
+
+_FASTA_EXTENSIONS = (".fas", ".fasta", ".fa", ".faa")
+
+
+def _resolve_alignment_path(gene: str, alignments_dir: str) -> str:
+    """Find the alignment file for a result-table gene name."""
+    if not alignments_dir:
+        raise RuntimeError("Alignment directory not specified")
+
+    align_dir = Path(alignments_dir)
+    gene_name = Path(str(gene)).name
+    gene_path = Path(gene_name)
+
+    candidates: list[Path] = []
+    if gene_path.suffix.lower() in _FASTA_EXTENSIONS:
+        candidates.append(align_dir / gene_name)
+    else:
+        candidates.extend(align_dir / f"{gene_name}{ext}" for ext in _FASTA_EXTENSIONS)
+
+    for path in candidates:
+        if path.exists():
+            return str(path)
+
+    if align_dir.is_dir():
+        target_stem = gene_path.stem if gene_path.suffix.lower() in _FASTA_EXTENSIONS else gene_name
+        target_stem_lower = target_stem.lower()
+        for path in sorted(align_dir.iterdir(), key=lambda p: p.name.lower()):
+            if path.is_file() and path.suffix.lower() in _FASTA_EXTENSIONS and path.stem.lower() == target_stem_lower:
+                return str(path)
+
+    searched = ", ".join(str(path) for path in candidates)
+    raise FileNotFoundError(
+        f"Alignment file not found for '{gene_name}' in {alignments_dir}. "
+        f"Supported FASTA extensions: {', '.join(_FASTA_EXTENSIONS)}. "
+        f"Searched: {searched}"
+    )
 
 
 class NumericItem(QTableWidgetItem):
@@ -62,11 +99,7 @@ def _launch_site_viewer(
 ) -> None:
     """Open the SiteViewer window for the given gene."""
     align_dir = getattr(config, "alignments_dir", "")
-    if not align_dir:
-        raise RuntimeError("Alignment directory not specified")
-    align_path = os.path.join(align_dir, f"{gene}.fas")
-    if not os.path.exists(align_path):
-        raise FileNotFoundError(f"Alignment file not found: {align_path}")
+    align_path = _resolve_alignment_path(gene, align_dir)
 
     # Load alignment records using shared FASTA reader for reliability/consistency
     records = read_fasta(align_path)
@@ -378,8 +411,8 @@ def _get_alignment_length(gene_name: str, alignments_dir: str):
     """Return the length of the alignment for the given gene."""
     if not alignments_dir:
         return None
-    path = os.path.join(alignments_dir, f"{gene_name}.fas")
     try:
+        path = _resolve_alignment_path(gene_name, alignments_dir)
         with open(path) as handle:
             for line in handle:
                 if not line.startswith(">"):
