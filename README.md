@@ -1,6 +1,6 @@
 # Evolutionary Sparse Learning with Paired Species Contrast (ESL-PSC) #
 
-[![Latest release](https://img.shields.io/badge/release-latest-blue.svg)](../../releases/latest)
+[![Release](https://img.shields.io/github/v/release/kumarlabgit/ESL-PSC?label=release)](https://github.com/kumarlabgit/ESL-PSC/releases/latest)
 [![GUI builds](../../actions/workflows/nuitka-build.yml/badge.svg)](../../actions/workflows/nuitka-build.yml)
 [![Package artifacts](../../actions/workflows/package-managers.yml/badge.svg)](../../actions/workflows/package-managers.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
