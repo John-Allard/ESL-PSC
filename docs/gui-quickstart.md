@@ -4,11 +4,11 @@ This guide is for first-time users who want the desktop app and do not want to s
 
 ## Download and install
 
-Use the GUI download for your computer:
+Open this repository's [latest release](../../../releases/latest), then choose the GUI download for your computer:
 
-- Mac with Apple Silicon: [`ESL-PSC-v2.5.5-macOS.dmg`](https://github.com/John-Allard/ESL-PSC/releases/download/v2.5.5/ESL-PSC-v2.5.5-macOS.dmg)
-- Windows: [`ESL-PSC-v2.5.5-Windows.zip`](https://github.com/John-Allard/ESL-PSC/releases/download/v2.5.5/ESL-PSC-v2.5.5-Windows.zip)
-- Ubuntu or Debian Linux on Intel/AMD 64-bit computers: [`esl-psc-gui_2.5.5_amd64.deb`](https://github.com/John-Allard/ESL-PSC/releases/download/v2.5.5/esl-psc-gui_2.5.5_amd64.deb)
+- Mac with Apple Silicon: the macOS `.dmg` asset
+- Windows: the Windows `.zip` asset
+- Ubuntu or Debian Linux on Intel/AMD 64-bit computers: the Linux `.deb` asset
 
 
 Install the app:
@@ -155,7 +155,7 @@ On the final page:
 ## First practice run
 
 If you installed the desktop GUI from a release download, download and unzip the
-separate [`ESL-PSC-demo-data-v1.zip`](https://github.com/John-Allard/ESL-PSC/releases/download/demo-data-v1/ESL-PSC-demo-data-v1.zip)
+separate [`ESL-PSC-demo-data-v1.zip`](../../../releases/download/demo-data-v1/ESL-PSC-demo-data-v1.zip)
 archive first.
 
 For the photosynthesis practice run, use:

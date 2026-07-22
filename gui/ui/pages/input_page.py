@@ -127,10 +127,10 @@ class InputPage(BaseWizardPage):
             "Alignment Directory:", 'directory',
             default_path=os.getcwd(),
             description=(
-                "Directory containing alignment files in FASTA format."
+                "Directory containing alignment files in FASTA format. "
                 "Sequences should be in 2-line FASTA format for best performance, but multi-line files are accepted and "
-                "will be converted, which may be slower. All sequences in a file must be aligned and contain only standard "
-                "amino acid and gap characters."
+                "will be converted, which may be slower. All sequences in a file must be aligned. Characters must be alphabetic or hyphens."
+                " Amino acids and nucleotides are supported."
             )
         )
         self.alignment_dir.path_changed.connect(

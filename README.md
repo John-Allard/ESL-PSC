@@ -1,8 +1,8 @@
 # Evolutionary Sparse Learning with Paired Species Contrast (ESL-PSC) #
 
-[![Release](https://img.shields.io/github/v/release/John-Allard/ESL-PSC?label=release)](https://github.com/John-Allard/ESL-PSC/releases/latest)
-[![GUI builds](https://img.shields.io/github/actions/workflow/status/John-Allard/ESL-PSC/nuitka-build.yml?label=GUI%20builds)](https://github.com/John-Allard/ESL-PSC/actions/workflows/nuitka-build.yml)
-[![Package artifacts](https://img.shields.io/github/actions/workflow/status/John-Allard/ESL-PSC/package-managers.yml?label=package%20artifacts)](https://github.com/John-Allard/ESL-PSC/actions/workflows/package-managers.yml)
+[![Latest release](https://img.shields.io/badge/release-latest-blue.svg)](../../releases/latest)
+[![GUI builds](../../actions/workflows/nuitka-build.yml/badge.svg)](../../actions/workflows/nuitka-build.yml)
+[![Package artifacts](../../actions/workflows/package-managers.yml/badge.svg)](../../actions/workflows/package-managers.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ## Table of Contents ##
@@ -40,12 +40,12 @@ Prepackaged software is available for download.
 
 #### 1. GUI app downloads (macOS/Windows/Linux)
 
-Download the GUI app for your platform from [GitHub Releases](https://github.com/John-Allard/ESL-PSC/releases/latest):
+Download the GUI app for your platform from [GitHub Releases](../../releases/latest):
 
 
 #### 2. CLI Toolkit archive (macOS/Windows/Linux)
 
-The Toolkit provides the CLI for ESL-PSC. Download the toolkit archive for your platform from [GitHub Releases](https://github.com/John-Allard/ESL-PSC/releases/latest):
+The Toolkit provides the CLI for ESL-PSC. Download the toolkit archive for your platform from [GitHub Releases](../../releases/latest):
 
 Then:
 
@@ -76,7 +76,7 @@ If you are new to ESL-PSC and want the simplest path, start with the guide in [`
 
 For a description of the GUI and ESL-PSC Toolkit features, see the [ESL-PSC Toolkit preprint](https://doi.org/10.48550/arXiv.2605.27677).
 
-Install the GUI app from the [GitHub Releases page](https://github.com/John-Allard/ESL-PSC/releases/latest).
+Install the GUI app from the [GitHub Releases page](../../releases/latest).
 
 Compatible with Windows, Mac, and Linux.
 
@@ -156,11 +156,11 @@ If you installed a pre-built GUI package from GitHub Releases, you do not need t
    sudo apt install libxcb-cursor0
    ```
 
-Feedback on the GUI is welcome! Please open an issue on the [GitHub repository](https://github.com/John-Allard/ESL-PSC/issues) if you have any questions or suggestions.
+Feedback on the GUI is welcome! Please open an issue on the [GitHub repository](../../issues) if you have any questions or suggestions.
 
 ### Stand-alone packaged applications ###
 
-Pre-built GUI packages are available for macOS, Windows, and Linux on the [GitHub Releases page](https://github.com/John-Allard/ESL-PSC/releases/latest). We also publish a CLI toolkit package.
+Pre-built GUI packages are available for macOS, Windows, and Linux on the [GitHub Releases page](../../releases/latest). We also publish a CLI toolkit package.
 
 The CLI toolkit package includes the compiled `esl-psc` binary plus Python support modules used by utility subcommands such as `pairs` and `site-counter`. It is intended to run with your system Python rather than bundling another Python runtime.
 After extracting the toolkit, install dependencies with:
@@ -211,13 +211,16 @@ Quick links:
 
 1. A directory of alignment files. These should be in **2-line FASTA format** and may use `.fas`, `.fasta`, `.fa`, or `.faa` file extensions. Each sequence should appear entirely on a single line below the line containing its identifier. If the sequence is split over multiple lines, the run will continue but a warning will be issued and the deletion canceler will convert the files to 2-line format, which may be slower. It is assumed that each separate alignment file will be a different genomic component, such as a gene, a protein, an exon, a domain, etc. and each component will be treated as a "group" of sites in the analysis (see Methods in [Allard et al., 2025](https://doi.org/10.1038/s41467-025-58428-8)). In the GUI, choose this folder in the **Alignment Directory** field on the Input page. In the CLI, use `--alignments_dir` and provide the full absolute path to the directory.
 
+   Protein, coding-DNA, and noncoding-DNA alignments can all be analyzed. ESL-PSC treats each alignment column as an independent categorical feature: it does not use codon boundaries, reading frame, or a codon substitution model. Consequently, nucleotide states in a DNA alignment can contribute directly to the fitted model. To study convergence at the amino-acid level, translate a codon alignment before supplying it to ESL-PSC; sequence translation is intentionally outside the scope of the Toolkit. Fourfold-degenerate third-codon positions can instead be analyzed separately as a control for synonymous convergence, which may help identify signals caused by processes such as incorrect orthology assignment or lateral transfer rather than adaptive protein convergence. Users must currently subset alignment sites themselves for this purpose.
+
 2. A species groups file. This is a text file that contains a comma-delimited list of species on each line. In the simplest case, one species identifier can be placed on each line. The first line must contain one or more species that possess the convergent trait under analysis, and the next line must contain one or more species that can serve as trait-negative controls for the species in the first line, such that the first two lines, and each subsequent pair of lines will define a contrast pair of species to use in the analysis (see [Allard et al., 2025](https://doi.org/10.1038/s41467-025-58428-8) for details on choosing contrast pairs for ESL-PSC analysis). When more than one species is given in a line, each of those species will be used in a separate analysis, along with all combinations of other alternative species. Thus, the total number of species combinations can be calculated by the product of the number of species given on each line. In the analysis, species listed on the first line, and subsequent odd numbered lines, will be assigned a response value of 1, and the associated control species on the even numbered lines will be assigned a response value of -1. In the GUI, choose an existing file in the **Species Groups File** field or create one with the Tree Viewer. In the CLI, use `--species_groups_file` and provide the full absolute path to the file.
 
 #### Optional input files: ####
 
 1. A species phenotype file.
-   - For analysis, provide a text file with each full species name followed by a comma and then a 1 or -1 for the true phenotype class to which that species belongs. A 1 typically refers to the convergent phenotype. If this file is not provided, the true phenotype will not be listed for each species prediction in the species_predictions output file. In the GUI, choose this file in the **Species Phenotypes File** field on the Input page. In the CLI, use `--species_pheno_path` and provide the full absolute path to the file.
-   - The GUI Tree Viewer also accepts continuous float phenotype values for visualization and continuous-trait pair selection. Species labels are colored on a red→blue gradient (low→high). Species without phenotype entries are shown in black. When contrast pairs are assigned, pair colors override phenotype colors for those species.
+   - Provide a comma-delimited text file with one species and one numeric value per line (`species,value`). Binary values may be `1`, `-1`, or `0`, where `0` means unassigned; continuous values are accepted when continuous-trait mode is enabled. In binary ESL-PSC runs, the training labels are determined by the alternating positive/control lines of the species groups file, so a phenotype entry is not required for every training species. In continuous-response runs, every training species selected in the species groups file must have a numeric phenotype entry.
+   - If a phenotype file is supplied, only held-out species that have entries in that file are included in the species-predictions output; a binary value of `0` leaves the true-phenotype field blank. If no phenotype file is supplied, all otherwise eligible held-out species receive SPS values, but their true-phenotype fields are unavailable. In the GUI, choose this file in the **Species Phenotypes File** field on the Input page. In the CLI, use `--species_pheno_path` and provide the full absolute path to the file.
+   - In the Tree Viewer, species without phenotype entries are displayed in black and cannot be selected automatically as positive or control species; they may still be assigned manually in a binary design. Continuous values are shown with a red→blue gradient (low→high). When contrast pairs are assigned, pair colors override phenotype colors for those species.
 
 2. A directory of alignments to use for predictions. By default, any species in the input alignments that are not used in building any given model will be assigned a sequence prediction score (SPS) for that model, which will be included in the predictions output file. As an alternative, you can use a separate directory of alignments for the predictions, however these still need to be fully aligned to any input species alignments or the predictions will be meaningless. In the GUI, choose this folder in the **Prediction Alignments Directory** field on the Input page. In the CLI, use `--prediction_alignments_dir` and provide the full absolute path to the directory.
 
